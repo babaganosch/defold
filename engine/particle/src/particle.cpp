@@ -574,7 +574,7 @@ namespace dmParticle
     // helper functions in update
     static void FetchAnimation(Emitter* emitter, EmitterPrototype* prototype, FetchAnimationCallback fetch_animation_callback);
     static void UpdateParticles(Instance* instance, Emitter* emitter, dmParticleDDF::Emitter* emitter_ddf, float dt);
-    static void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt);
+    static void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt, Vector3 gravity);
     static void UpdateEmitterState(Instance* instance, Emitter* emitter, EmitterPrototype* emitter_prototype, dmParticleDDF::Emitter* emitter_ddf, float dt);
     static void EvaluateEmitterProperties(Emitter* emitter, Property* emitter_properties, float duration, float properties[EMITTER_KEY_COUNT]);
     static void EvaluateParticleProperties(Emitter* emitter, Property* particle_properties, dmParticleDDF::Emitter* emitter_ddf, float dt);
@@ -1562,8 +1562,7 @@ namespace dmParticle
                 if (newPos[0] > 600.0 || newPos[0] < 400.0) p->m_Velocity[0] = -p->m_Velocity[0];
                 if (newPos[1] > 400.0 || newPos[1] < 200.0) p->m_Velocity[1] = -p->m_Velocity[1];
 
-
-                UpdateParticle(p, ddf, dt);
+                UpdateParticle(p, ddf, dt, Vector3(0.0, -5.0, 0.0));
 
             }
         } else {
@@ -1571,17 +1570,17 @@ namespace dmParticle
             for (uint32_t i = 0; i < particle_count; ++i)
             {
                 Particle* p = &particles[i];
-                UpdateParticle(p, ddf, dt);
+                UpdateParticle(p, ddf, dt, Vector3(0.0, 0.0, 0.0));
             }
         }
 
     }
 
-    void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt)
+    void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt, Vector3 gravity)
     {
         // NOTE This velocity integration has a larger error than normal since we don't use the velocity at the
         // beginning of the frame, but it's ok since particle movement does not need to be very exact
-
+        p->m_Velocity += gravity;
         p->SetPosition(p->GetPosition() + p->m_Velocity * dt);
         p->m_Scale[0] += p->m_Scale[0] * p->m_StretchFactorX;
         if (!ddf->m_StretchWithVelocity)
