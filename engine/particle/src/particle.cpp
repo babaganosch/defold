@@ -1,10 +1,10 @@
 // Copyright 2020 The Defold Foundation
 // Licensed under the Defold License version 1.0 (the "License"); you may not use
 // this file except in compliance with the License.
-// 
+//
 // You may obtain a copy of the License, together with FAQs at
 // https://www.defold.com/license
-// 
+//
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
@@ -574,6 +574,7 @@ namespace dmParticle
     // helper functions in update
     static void FetchAnimation(Emitter* emitter, EmitterPrototype* prototype, FetchAnimationCallback fetch_animation_callback);
     static void UpdateParticles(Instance* instance, Emitter* emitter, dmParticleDDF::Emitter* emitter_ddf, float dt);
+    static void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt);
     static void UpdateEmitterState(Instance* instance, Emitter* emitter, EmitterPrototype* emitter_prototype, dmParticleDDF::Emitter* emitter_ddf, float dt);
     static void EvaluateEmitterProperties(Emitter* emitter, Property* emitter_properties, float duration, float properties[EMITTER_KEY_COUNT]);
     static void EvaluateParticleProperties(Emitter* emitter, Property* particle_properties, dmParticleDDF::Emitter* emitter_ddf, float dt);
@@ -1541,19 +1542,52 @@ namespace dmParticle
             }
         }
         uint32_t particle_count = particles.Size();
-        for (uint32_t i = 0; i < particle_count; ++i)
-        {
-            Particle* p = &particles[i];
-            // NOTE This velocity integration has a larger error than normal since we don't use the velocity at the
-            // beginning of the frame, but it's ok since particle movement does not need to be very exact
-            p->SetPosition(p->GetPosition() + p->m_Velocity * dt);
 
-            p->m_Scale[0] += p->m_Scale[0] * p->m_StretchFactorX;
-            if (!ddf->m_StretchWithVelocity)
-                p->m_Scale[1] += p->m_Scale[1] * p->m_StretchFactorY;
-            else
-                p->m_Scale[1] += p->m_Scale[1] * p->m_StretchFactorY * length(p->m_Velocity) * STRETCH_SCALING;
+        if (true) {
+            // Particles with collision
+            uint32_t obstacle_count = 100;
+            for (uint32_t i = 0; i < particle_count; ++i)
+            {
+                Particle* p = &particles[i];
+
+                Point3 newPos = p->GetPosition() + p->GetVelocity() * dt;
+
+                // Loop through obstacles
+                for (uint32_t j = 0; j < obstacle_count; j++) {
+                    // If collision, reflect velocity
+                    // break to make sure we dont collide more then once, yolo
+                    break;
+                }
+
+                if (newPos[0] > 600.0 || newPos[0] < 400.0) p->m_Velocity[0] = -p->m_Velocity[0];
+                if (newPos[1] > 400.0 || newPos[1] < 200.0) p->m_Velocity[1] = -p->m_Velocity[1];
+
+
+                UpdateParticle(p, ddf, dt);
+
+            }
+        } else {
+            // Standard particles
+            for (uint32_t i = 0; i < particle_count; ++i)
+            {
+                Particle* p = &particles[i];
+                UpdateParticle(p, ddf, dt);
+            }
         }
+
+    }
+
+    void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt)
+    {
+        // NOTE This velocity integration has a larger error than normal since we don't use the velocity at the
+        // beginning of the frame, but it's ok since particle movement does not need to be very exact
+
+        p->SetPosition(p->GetPosition() + p->m_Velocity * dt);
+        p->m_Scale[0] += p->m_Scale[0] * p->m_StretchFactorX;
+        if (!ddf->m_StretchWithVelocity)
+            p->m_Scale[1] += p->m_Scale[1] * p->m_StretchFactorY;
+        else
+            p->m_Scale[1] += p->m_Scale[1] * p->m_StretchFactorY * length(p->m_Velocity) * STRETCH_SCALING;
     }
 
     void DebugRender(HParticleContext context, void* user_context, RenderLineCallback render_line_callback)
