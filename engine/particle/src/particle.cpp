@@ -571,6 +571,26 @@ namespace dmParticle
         return IsSleeping(GetInstance(context, instance));
     }
 
+    void SetCollisionFlag(HParticleContext context, HInstance instance)
+    {
+        Instance* i = GetInstance(context, instance);
+        i->m_ParticleCollision = !(i->m_ParticleCollision);
+    }
+
+    void AddCollider(HParticleContext context, HInstance instance, Vector3 position, Vector3 rotation, Vector3 dimensions)
+    {
+        // TODO: FIX!
+        Instance* i = GetInstance(context, instance);
+        i->m_Colliders.SetCapacity(i->m_Colliders.Size() + 1);
+        i->m_Colliders.SetSize(i->m_Colliders.Size() + 1);
+        Collider coll = Collider();
+        coll.m_Position   = position;
+        coll.m_Rotation   = rotation;
+        coll.m_Dimensions = dimensions;
+        // Måste göras dynamiskt
+        i->m_Colliders[i->m_Colliders.Size() - 1] = coll;
+    }
+
     // helper functions in update
     static void FetchAnimation(Emitter* emitter, EmitterPrototype* prototype, FetchAnimationCallback fetch_animation_callback);
     static void UpdateParticles(Instance* instance, Emitter* emitter, dmParticleDDF::Emitter* emitter_ddf, float dt);
@@ -1543,9 +1563,13 @@ namespace dmParticle
         }
         uint32_t particle_count = particles.Size();
 
-        if (true) {
+        if (instance->m_ParticleCollision) {
+            uint32_t obstacle_count = instance->m_Colliders.Size();
+            dmLogWarning("Collider (%d)", obstacle_count);
+            if (obstacle_count > 0)
+                dmLogWarning("Collider (%f)", instance->m_Colliders[0].m_Position[0]);
+
             // Particles with collision
-            uint32_t obstacle_count = 100;
             for (uint32_t i = 0; i < particle_count; ++i)
             {
                 Particle* p = &particles[i];
@@ -1556,11 +1580,24 @@ namespace dmParticle
                 for (uint32_t j = 0; j < obstacle_count; j++) {
                     // If collision, reflect velocity
                     // break to make sure we dont collide more then once, yolo
-                    break;
-                }
 
-                if (newPos[0] > 600.0 || newPos[0] < 400.0) p->m_Velocity[0] = -p->m_Velocity[0];
-                if (newPos[1] > 400.0 || newPos[1] < 200.0) p->m_Velocity[1] = -p->m_Velocity[1];
+                    // Only care about x-scale due to perfect circles, this aint good!
+                    float dx = instance->m_Colliders[j].m_Dimensions[0] / 2.0;
+
+                    float diff_x = newPos[0] - instance->m_Colliders[j].m_Position[0];
+                    float diff_y = newPos[1] - instance->m_Colliders[j].m_Position[1];
+                    float diff_z = newPos[2] - instance->m_Colliders[j].m_Position[2];
+                    float dist = sqrt((diff_x * diff_x) + (diff_y * diff_y) + (diff_z * diff_z));
+
+                    Vector3 norm = Vector3(diff_x / dist, diff_y / dist, diff_z / dist);
+
+                    if (dist <= dx) {
+                        float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
+                        Vector3 out = p->m_Velocity - (2.0 * dot) * norm;
+                        p->m_Velocity = Vector3(0.0);
+                    }
+
+                }
 
                 UpdateParticle(p, ddf, dt, Vector3(0.0, -5.0, 0.0));
 
@@ -1570,7 +1607,7 @@ namespace dmParticle
             for (uint32_t i = 0; i < particle_count; ++i)
             {
                 Particle* p = &particles[i];
-                UpdateParticle(p, ddf, dt, Vector3(0.0, 0.0, 0.0));
+                UpdateParticle(p, ddf, dt, Vector3(0.0, -5.0, 0.0));
             }
         }
 

@@ -1,10 +1,10 @@
 // Copyright 2020 The Defold Foundation
 // Licensed under the Defold License version 1.0 (the "License"); you may not use
 // this file except in compliance with the License.
-// 
+//
 // You may obtain a copy of the License, together with FAQs at
 // https://www.defold.com/license
-// 
+//
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
@@ -546,6 +546,16 @@ namespace dmParticle
      * @param instance Instance containing the emitters to be rehashed
      */
     DM_PARTICLE_PROTO(void, ReHash, HParticleContext context, HInstance instance);
+
+    /**
+     * Sup? 1337
+     */
+    DM_PARTICLE_PROTO(void, SetCollisionFlag, HParticleContext context, HInstance instance);
+
+    /**
+     *  Add collider
+     */
+    DM_PARTICLE_PROTO(void, AddCollider, HParticleContext context, HInstance instance, Vector3 position, Vector3 rotation, Vector3 dimensions);
 
     /**
      * Wrapper for dmHashString64

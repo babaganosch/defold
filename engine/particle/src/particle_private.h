@@ -1,10 +1,10 @@
 // Copyright 2020 The Defold Foundation
 // Licensed under the Defold License version 1.0 (the "License"); you may not use
 // this file except in compliance with the License.
-// 
+//
 // You may obtain a copy of the License, together with FAQs at
 // https://www.defold.com/license
-// 
+//
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
@@ -149,6 +149,20 @@ namespace dmParticle
         uint16_t                m_ReHash : 1;
     };
 
+    struct Collider
+    {
+        Collider()
+        : m_Position(Vector3(0.0f, 0.0f, 0.0f))
+        , m_Rotation(Vector3(0.0f, 0.0f, 0.0f))
+        , m_Dimensions(Vector3(0.0f, 0.0f, 0.0f))
+        { }
+
+        Vector3                 m_Position;
+        Vector3                 m_Rotation;
+        Vector3                 m_Dimensions;
+
+    };
+
     struct Instance
     {
         Instance()
@@ -159,6 +173,8 @@ namespace dmParticle
         , m_PlayTime(0.0f)
         , m_VersionNumber(0)
         , m_ScaleAlongZ(0)
+        , m_ParticleCollision(false)
+        , m_Colliders()
         {
             m_WorldTransform.SetIdentity();
         }
@@ -179,6 +195,10 @@ namespace dmParticle
         uint16_t                m_VersionNumber;
         /// Whether the scale of the world transform should be used along Z.
         uint16_t                m_ScaleAlongZ : 1;
+        /// Whether to check for particle collision or not
+        bool                    m_ParticleCollision;
+        /// List of colliders
+        dmArray<Collider>       m_Colliders;
     };
 
     /**

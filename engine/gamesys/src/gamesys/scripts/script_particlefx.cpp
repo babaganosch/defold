@@ -257,6 +257,60 @@ namespace dmGameSystem
         return 0;
     }
 
+    int ParticleFX_ActivateCollision(lua_State* L)
+    {
+        int top = lua_gettop(L);
+
+        dmGameObject::HInstance instance = CheckGoInstance(L);
+
+        if (top != 1)
+        {
+            return luaL_error(L, "particlefx.activate_collision only takes a URL as parameter");
+        }
+
+        dmGameSystemDDF::ActivateCollisionParticleFX msg;
+        uint32_t msg_size = sizeof(dmGameSystemDDF::ActivateCollisionParticleFX);
+
+        dmMessage::URL receiver;
+        dmMessage::URL sender;
+        dmScript::ResolveURL(L, 1, &receiver, &sender);
+
+        dmMessage::Post(&sender, &receiver, dmGameSystemDDF::ActivateCollisionParticleFX::m_DDFDescriptor->m_NameHash, (uintptr_t)instance, (uintptr_t)dmGameSystemDDF::ActivateCollisionParticleFX::m_DDFDescriptor, (void*)&msg, msg_size, 0);
+        assert(top == lua_gettop(L));
+
+        return 0;
+
+    }
+
+    int ParticleFX_AddCollider(lua_State* L)
+    {
+        int top = lua_gettop(L);
+
+        dmGameObject::HInstance instance = CheckGoInstance(L);
+        if (top != 1 && top != 4)
+        {
+            return luaL_error(L, "particlefx.add_collider atleast requires a URL as parameter");
+        }
+
+        Vectormath::Aos::Vector3* position   = dmScript::CheckVector3(L, 2);
+        Vectormath::Aos::Vector3* rotation   = dmScript::CheckVector3(L, 3);
+        Vectormath::Aos::Vector3* dimensions = dmScript::CheckVector3(L, 4);
+
+        dmGameSystemDDF::AddColliderParticleFX msg;
+        msg.m_Position   = *position;
+        msg.m_Rotation   = *rotation;
+        msg.m_Dimensions = *dimensions;
+
+        dmMessage::URL receiver;
+        dmMessage::URL sender;
+        dmScript::ResolveURL(L, 1, &receiver, &sender);
+
+        dmMessage::Post(&sender, &receiver, dmGameSystemDDF::AddColliderParticleFX::m_DDFDescriptor->m_NameHash, (uintptr_t)instance, (uintptr_t)dmGameSystemDDF::AddColliderParticleFX::m_DDFDescriptor, &msg, sizeof(msg), 0);
+        assert(top == lua_gettop(L));
+
+        return 0;
+    }
+
     /*# set a shader constant for a particle FX component emitter
      * Sets a shader constant for a particle FX component emitter.
      * The constant must be defined in the material assigned to the emitter.
@@ -358,6 +412,8 @@ namespace dmGameSystem
         {"stop",            ParticleFX_Stop},
         {"set_constant",    ParticleFX_SetConstant},
         {"reset_constant",  ParticleFX_ResetConstant},
+        {"activate_collision", ParticleFX_ActivateCollision},
+        {"add_collider",    ParticleFX_AddCollider},
         {0, 0}
     };
 
