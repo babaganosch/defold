@@ -469,7 +469,21 @@ namespace dmGameSystem
                 dmhash_t component_id = params.m_Message->m_Receiver.m_Fragment;
                 if (component->m_Instance == params.m_Instance && component->m_ComponentId == component_id)
                 {
-                    dmParticle::AddCollider(world->m_ParticleContext, component->m_ParticleInstance, ddf->m_Position, ddf->m_Rotation, ddf->m_Dimensions);
+                    dmParticle::AddCollider(world->m_ParticleContext, component->m_ParticleInstance, ddf->m_Handle, ddf->m_Position, ddf->m_Dimensions);
+                }
+            }
+        }
+        else if (params.m_Message->m_Id == dmGameSystemDDF::SetPositionColliderParticleFX::m_DDFDescriptor->m_NameHash)
+        {
+            dmGameSystemDDF::SetPositionColliderParticleFX* ddf = (dmGameSystemDDF::SetPositionColliderParticleFX*)params.m_Message->m_Data;
+            uint32_t count = world->m_Components.Size();
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                ParticleFXComponent* component = &world->m_Components[i];
+                dmhash_t component_id = params.m_Message->m_Receiver.m_Fragment;
+                if (component->m_Instance == params.m_Instance && component->m_ComponentId == component_id)
+                {
+                    dmParticle::SetColliderPosition(world->m_ParticleContext, component->m_ParticleInstance, ddf->m_Handle, ddf->m_Position);
                 }
             }
         }

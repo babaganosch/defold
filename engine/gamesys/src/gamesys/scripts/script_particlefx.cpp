@@ -25,6 +25,8 @@
 #include "gamesys_ddf.h"
 #include "../gamesys_private.h"
 
+#include "../components/comp_particlefx.h"
+
 #include "resources/res_particlefx.h"
 
 #include "script_particlefx.h"
@@ -282,33 +284,59 @@ namespace dmGameSystem
 
     }
 
-    int ParticleFX_AddCollider(lua_State* L)
+    int ParticleFX_ColliderSetPosition(lua_State* L)
     {
         int top = lua_gettop(L);
 
         dmGameObject::HInstance instance = CheckGoInstance(L);
-        if (top != 1 && top != 4)
+        if (top != 3)
         {
-            return luaL_error(L, "particlefx.add_collider atleast requires a URL as parameter");
+            return luaL_error(L, "particlefx.collider_set_position requiers three parameters");
         }
 
-        Vectormath::Aos::Vector3* position   = dmScript::CheckVector3(L, 2);
-        Vectormath::Aos::Vector3* rotation   = dmScript::CheckVector3(L, 3);
-        Vectormath::Aos::Vector3* dimensions = dmScript::CheckVector3(L, 4);
+        uint32_t handle = luaL_checknumber(L, 2);
+        Vectormath::Aos::Vector3* position = dmScript::CheckVector3(L, 3);
 
-        dmGameSystemDDF::AddColliderParticleFX msg;
+        dmGameSystemDDF::SetPositionColliderParticleFX msg;
+        msg.m_Handle     = handle;
         msg.m_Position   = *position;
-        msg.m_Rotation   = *rotation;
-        msg.m_Dimensions = *dimensions;
 
         dmMessage::URL receiver;
         dmMessage::URL sender;
         dmScript::ResolveURL(L, 1, &receiver, &sender);
 
-        dmMessage::Post(&sender, &receiver, dmGameSystemDDF::AddColliderParticleFX::m_DDFDescriptor->m_NameHash, (uintptr_t)instance, (uintptr_t)dmGameSystemDDF::AddColliderParticleFX::m_DDFDescriptor, &msg, sizeof(msg), 0);
+        dmMessage::Post(&sender, &receiver, dmGameSystemDDF::SetPositionColliderParticleFX::m_DDFDescriptor->m_NameHash, (uintptr_t)instance, (uintptr_t)dmGameSystemDDF::SetPositionColliderParticleFX::m_DDFDescriptor, &msg, sizeof(msg), 0);
+
         assert(top == lua_gettop(L));
 
         return 0;
+    }
+
+    int ParticleFX_AddCollider(lua_State* L)
+    {
+        int top = lua_gettop(L);
+
+        // New:
+        dmGameObject::HInstance instance = CheckGoInstance(L);
+
+        if (top != 4)
+        {
+            return luaL_error(L, "particlefx.add_collider atleast requires a URL as parameter");
+        }
+
+        dmGameSystemDDF::AddColliderParticleFX msg;
+        msg.m_Handle = luaL_checknumber(L, 2);
+        msg.m_Position = *dmScript::CheckVector3(L, 3);
+        msg.m_Dimensions = *dmScript::CheckVector3(L, 4);
+
+        dmMessage::URL receiver;
+        dmMessage::URL sender;
+        dmScript::ResolveURL(L, 1, &receiver, &sender);
+        dmMessage::Post(&sender, &receiver, dmGameSystemDDF::AddColliderParticleFX::m_DDFDescriptor->m_NameHash, (uintptr_t)instance, (uintptr_t)dmGameSystemDDF::AddColliderParticleFX::m_DDFDescriptor, &msg, sizeof(msg), 0);
+
+        assert(top == lua_gettop(L));
+
+        return 1;
     }
 
     /*# set a shader constant for a particle FX component emitter
@@ -414,6 +442,7 @@ namespace dmGameSystem
         {"reset_constant",  ParticleFX_ResetConstant},
         {"activate_collision", ParticleFX_ActivateCollision},
         {"add_collider",    ParticleFX_AddCollider},
+        {"collider_set_position", ParticleFX_ColliderSetPosition},
         {0, 0}
     };
 

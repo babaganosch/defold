@@ -124,10 +124,16 @@ message SetSpeed
 message PlayParticleFX {}
 message StopParticleFX {}
 message ActivateCollisionParticleFX {}
-message AddColliderParticleFX {
-    required dmMath.Vector3 position   = 1 [(field_align)=true];
-    required dmMath.Vector3 rotation   = 2 [(field_align)=true];
+message AddColliderParticleFX
+{
+    required uint32         handle     = 1;
+    required dmMath.Vector3 position   = 2 [(field_align)=true];
     required dmMath.Vector3 dimensions = 3 [(field_align)=true];
+}
+message SetPositionColliderParticleFX
+{
+    required uint32         handle      = 1;
+    required dmMath.Vector3 position    = 2 [(field_align)=true];
 }
 message SetConstantParticleFX
 {

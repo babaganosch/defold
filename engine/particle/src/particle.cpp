@@ -577,24 +577,51 @@ namespace dmParticle
         i->m_ParticleCollision = !(i->m_ParticleCollision);
     }
 
-    void AddCollider(HParticleContext context, HInstance instance, Vector3 position, Vector3 rotation, Vector3 dimensions)
+    void SetColliderPosition(HParticleContext context, HInstance instance, uint32_t handle, Vector3 position)
     {
-        // TODO: FIX!
+        // TODO: Felhanteringsknåd
         Instance* i = GetInstance(context, instance);
-        i->m_Colliders.SetCapacity(i->m_Colliders.Size() + 1);
-        i->m_Colliders.SetSize(i->m_Colliders.Size() + 1);
+        if (handle > i->m_Colliders.Size())
+        {
+            dmLogError("Something wrong with collider handle");
+            return;
+        }
+        i->m_Colliders[handle].m_Position = position;
+    }
+
+    void AddCollider(HParticleContext context, HInstance instance, uint32_t id, Vector3 position, Vector3 dimensions)
+    {
+        // TODO: Not sure I'm working with dmArrays correctly, but hey, it works!
+        if (instance == INVALID_INSTANCE) {
+            return;
+        }
+        Instance* i = GetInstance(context, instance);
+        if (!i) return;
+
+        uint32_t length = i->m_Colliders.Size();
+        for (uint32_t j = 0; j < length; ++j )
+        {
+            if (i->m_Colliders[j].m_Id == id)
+            {
+                dmLogError("Particle with handle %d already exists!", id);
+                return;
+            }
+        }
+
+        // Create the collider and add it to the list
+        i->m_Colliders.SetCapacity(length + 1);
+        i->m_Colliders.SetSize(length + 1);
         Collider coll = Collider();
-        coll.m_Position   = position;
-        coll.m_Rotation   = rotation;
-        coll.m_Dimensions = dimensions;
-        // Måste göras dynamiskt
-        i->m_Colliders[i->m_Colliders.Size() - 1] = coll;
+                 coll.m_Position   = position;
+                 coll.m_Dimensions = dimensions;
+                 coll.m_Id = id;
+        i->m_Colliders[length] = coll;
     }
 
     // helper functions in update
     static void FetchAnimation(Emitter* emitter, EmitterPrototype* prototype, FetchAnimationCallback fetch_animation_callback);
     static void UpdateParticles(Instance* instance, Emitter* emitter, dmParticleDDF::Emitter* emitter_ddf, float dt);
-    static void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt, Vector3 gravity);
+    static void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt);
     static void UpdateEmitterState(Instance* instance, Emitter* emitter, EmitterPrototype* emitter_prototype, dmParticleDDF::Emitter* emitter_ddf, float dt);
     static void EvaluateEmitterProperties(Emitter* emitter, Property* emitter_properties, float duration, float properties[EMITTER_KEY_COUNT]);
     static void EvaluateParticleProperties(Emitter* emitter, Property* particle_properties, dmParticleDDF::Emitter* emitter_ddf, float dt);
@@ -1562,12 +1589,9 @@ namespace dmParticle
             }
         }
         uint32_t particle_count = particles.Size();
+        uint32_t obstacle_count = instance->m_Colliders.Size();
 
-        if (instance->m_ParticleCollision) {
-            uint32_t obstacle_count = instance->m_Colliders.Size();
-            dmLogWarning("Collider (%d)", obstacle_count);
-            if (obstacle_count > 0)
-                dmLogWarning("Collider (%f)", instance->m_Colliders[0].m_Position[0]);
+        if (instance->m_ParticleCollision && obstacle_count > 0) {
 
             // Particles with collision
             for (uint32_t i = 0; i < particle_count; ++i)
@@ -1583,23 +1607,24 @@ namespace dmParticle
 
                     // Only care about x-scale due to perfect circles, this aint good!
                     float dx = instance->m_Colliders[j].m_Dimensions[0] / 2.0;
+                    const float dissipation = 0.85;
 
                     float diff_x = newPos[0] - instance->m_Colliders[j].m_Position[0];
                     float diff_y = newPos[1] - instance->m_Colliders[j].m_Position[1];
                     float diff_z = newPos[2] - instance->m_Colliders[j].m_Position[2];
                     float dist = sqrt((diff_x * diff_x) + (diff_y * diff_y) + (diff_z * diff_z));
 
-                    Vector3 norm = Vector3(diff_x / dist, diff_y / dist, diff_z / dist);
+                    Vector3 norm = Vector3(diff_x / dist, diff_y / dist, 0);
 
                     if (dist <= dx) {
                         float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
-                        Vector3 out = p->m_Velocity - (2.0 * dot) * norm;
-                        p->m_Velocity = Vector3(0.0);
+                        Vector3 out = p->m_Velocity - 2.0 * dot * norm;
+                        p->m_Velocity = out * dissipation;
                     }
-
+                    break;
                 }
 
-                UpdateParticle(p, ddf, dt, Vector3(0.0, -5.0, 0.0));
+                UpdateParticle(p, ddf, dt);
 
             }
         } else {
@@ -1607,17 +1632,16 @@ namespace dmParticle
             for (uint32_t i = 0; i < particle_count; ++i)
             {
                 Particle* p = &particles[i];
-                UpdateParticle(p, ddf, dt, Vector3(0.0, -5.0, 0.0));
+                UpdateParticle(p, ddf, dt);
             }
         }
 
     }
 
-    void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt, Vector3 gravity)
+    void UpdateParticle(Particle* p, dmParticleDDF::Emitter* ddf, float dt)
     {
         // NOTE This velocity integration has a larger error than normal since we don't use the velocity at the
         // beginning of the frame, but it's ok since particle movement does not need to be very exact
-        p->m_Velocity += gravity;
         p->SetPosition(p->GetPosition() + p->m_Velocity * dt);
         p->m_Scale[0] += p->m_Scale[0] * p->m_StretchFactorX;
         if (!ddf->m_StretchWithVelocity)

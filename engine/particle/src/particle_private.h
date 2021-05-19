@@ -153,13 +153,14 @@ namespace dmParticle
     {
         Collider()
         : m_Position(Vector3(0.0f, 0.0f, 0.0f))
-        , m_Rotation(Vector3(0.0f, 0.0f, 0.0f))
+        , m_Rotation(Quat(0.0f))
         , m_Dimensions(Vector3(0.0f, 0.0f, 0.0f))
         { }
 
         Vector3                 m_Position;
-        Vector3                 m_Rotation;
+        Quat                    m_Rotation;
         Vector3                 m_Dimensions;
+        uint32_t                m_Id;
 
     };
 

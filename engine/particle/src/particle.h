@@ -555,7 +555,12 @@ namespace dmParticle
     /**
      *  Add collider
      */
-    DM_PARTICLE_PROTO(void, AddCollider, HParticleContext context, HInstance instance, Vector3 position, Vector3 rotation, Vector3 dimensions);
+    DM_PARTICLE_PROTO(void, AddCollider, HParticleContext context, HInstance instance, uint32_t handle, Vector3 position, Vector3 dimensions);
+
+    /**
+     * Move collider
+     */
+    DM_PARTICLE_PROTO(void, SetColliderPosition, HParticleContext context, HInstance instance, uint32_t handle, Vector3 position);
 
     /**
      * Wrapper for dmHashString64
