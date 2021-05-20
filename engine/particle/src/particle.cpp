@@ -1602,12 +1602,12 @@ namespace dmParticle
 
                 // Loop through obstacles
                 for (uint32_t j = 0; j < obstacle_count; j++) {
-                    // If collision, reflect velocity
+                    // If collision, reflect velocity and move out (from your parents) //Oskar
                     // break to make sure we dont collide more then once, yolo
 
                     // Only care about x-scale due to perfect circles, this aint good!
                     float dx = instance->m_Colliders[j].m_Dimensions[0] / 2.0;
-                    const float dissipation = 0.85;
+                    const float dissipation = 0.65;
 
                     float diff_x = newPos[0] - instance->m_Colliders[j].m_Position[0];
                     float diff_y = newPos[1] - instance->m_Colliders[j].m_Position[1];
@@ -1619,9 +1619,13 @@ namespace dmParticle
                     if (dist <= dx) {
                         float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
                         Vector3 out = p->m_Velocity - 2.0 * dot * norm;
+                        // Reflect velocity
                         p->m_Velocity = out * dissipation;
+                        // Move particle out of obstacle
+                        p->SetPosition(p->GetPosition() + norm * (dx - dist));
+                        // TODO: Break out of loop, we don't want to collide with multiple colliders, AMIRIGHT??!?
                     }
-                    break;
+
                 }
 
                 UpdateParticle(p, ddf, dt);
@@ -1631,8 +1635,7 @@ namespace dmParticle
             // Standard particles
             for (uint32_t i = 0; i < particle_count; ++i)
             {
-                Particle* p = &particles[i];
-                UpdateParticle(p, ddf, dt);
+                UpdateParticle(&particles[i], ddf, dt);
             }
         }
 
