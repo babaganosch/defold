@@ -118,6 +118,12 @@ namespace dmParticle
         FETCH_ANIMATION_UNKNOWN_ERROR = -1000
     };
 
+    enum ColliderShape
+    {
+        COLLIDER_SPHERE = 0,
+        COLLIDER_BOX = 1
+    };
+
     enum EmitterState
     {
         EMITTER_STATE_SLEEPING = 0,
@@ -548,19 +554,20 @@ namespace dmParticle
     DM_PARTICLE_PROTO(void, ReHash, HParticleContext context, HInstance instance);
 
     /**
-     * Sup? 1337
+     * Collision Flag
      */
     DM_PARTICLE_PROTO(void, SetCollisionFlag, HParticleContext context, HInstance instance);
 
     /**
      *  Add collider
      */
-    DM_PARTICLE_PROTO(void, AddCollider, HParticleContext context, HInstance instance, uint32_t handle, Vector3 position, Vector3 dimensions);
+    DM_PARTICLE_PROTO(void, AddCollider, HParticleContext context, HInstance instance, uint32_t handle, uint32_t shape, Vector3 position, Vector3 dimensions);
 
     /**
      * Move collider
      */
     DM_PARTICLE_PROTO(void, SetColliderPosition, HParticleContext context, HInstance instance, uint32_t handle, Vector3 position);
+    DM_PARTICLE_PROTO(void, SetColliderForce, HParticleContext context, HInstance instance, uint32_t handle, Vector3 force);
 
     /**
      * Wrapper for dmHashString64

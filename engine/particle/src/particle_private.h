@@ -152,14 +152,20 @@ namespace dmParticle
     struct Collider
     {
         Collider()
-        : m_Position(Vector3(0.0f, 0.0f, 0.0f))
-        , m_Rotation(Quat(0.0f))
-        , m_Dimensions(Vector3(0.0f, 0.0f, 0.0f))
+        : m_Position(Vector3(0.0))
+        , m_Rotation(Quat(0.0))
+        , m_Dimensions(Vector3(0.0))
+        , m_Force(Vector3(0.0))
+        , m_Mass(10.0f)
+        , m_Shape(COLLIDER_SPHERE)
         { }
 
         Vector3                 m_Position;
         Quat                    m_Rotation;
         Vector3                 m_Dimensions;
+        Vector3                 m_Force;
+        float                   m_Mass;
+        ColliderShape           m_Shape;
         uint32_t                m_Id;
 
     };

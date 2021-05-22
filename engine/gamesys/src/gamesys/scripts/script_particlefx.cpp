@@ -312,22 +312,51 @@ namespace dmGameSystem
         return 0;
     }
 
-    int ParticleFX_AddCollider(lua_State* L)
+    int ParticleFX_ColliderSetForce(lua_State* L)
     {
         int top = lua_gettop(L);
 
-        // New:
         dmGameObject::HInstance instance = CheckGoInstance(L);
-
-        if (top != 4)
+        if (top != 3)
         {
-            return luaL_error(L, "particlefx.add_collider atleast requires a URL as parameter");
+            return luaL_error(L, "particlefx.collider_set_force requiers three parameters");
         }
 
+        uint32_t handle = luaL_checknumber(L, 2);
+        Vectormath::Aos::Vector3* force = dmScript::CheckVector3(L, 3);
+
+        dmGameSystemDDF::SetForceColliderParticleFX msg;
+        msg.m_Handle     = handle;
+        msg.m_Force      = *force;
+
+        dmMessage::URL receiver;
+        dmMessage::URL sender;
+        dmScript::ResolveURL(L, 1, &receiver, &sender);
+
+        dmMessage::Post(&sender, &receiver, dmGameSystemDDF::SetForceColliderParticleFX::m_DDFDescriptor->m_NameHash, (uintptr_t)instance, (uintptr_t)dmGameSystemDDF::SetForceColliderParticleFX::m_DDFDescriptor, &msg, sizeof(msg), 0);
+
+        assert(top == lua_gettop(L));
+
+        return 0;
+    }
+
+    int ParticleFX_AddCollider(lua_State* L)
+    {
+        int top = lua_gettop(L);
+        if (top != 5)
+        {
+            return luaL_error(L, "particlefx.add_collider requires URL, Handle, Shape, Position and Dimensions");
+        }
+
+        dmGameObject::HInstance instance = CheckGoInstance(L);
+
+        // TODO: Shape is passed as integer, should probably check if it's correct
+
         dmGameSystemDDF::AddColliderParticleFX msg;
-        msg.m_Handle = luaL_checknumber(L, 2);
-        msg.m_Position = *dmScript::CheckVector3(L, 3);
-        msg.m_Dimensions = *dmScript::CheckVector3(L, 4);
+        msg.m_Handle = luaL_checkinteger(L, 2);
+        msg.m_Shape  = luaL_checkinteger(L, 3);
+        msg.m_Position = *dmScript::CheckVector3(L, 4);
+        msg.m_Dimensions = *dmScript::CheckVector3(L, 5);
 
         dmMessage::URL receiver;
         dmMessage::URL sender;
@@ -443,6 +472,7 @@ namespace dmGameSystem
         {"activate_collision", ParticleFX_ActivateCollision},
         {"add_collider",    ParticleFX_AddCollider},
         {"collider_set_position", ParticleFX_ColliderSetPosition},
+        {"collider_set_force", ParticleFX_ColliderSetForce},
         {0, 0}
     };
 
@@ -460,6 +490,9 @@ namespace dmGameSystem
         SETCONSTANT(EMITTER_STATE_PRESPAWN, dmParticle::EMITTER_STATE_PRESPAWN);
         SETCONSTANT(EMITTER_STATE_SPAWNING, dmParticle::EMITTER_STATE_SPAWNING);
         SETCONSTANT(EMITTER_STATE_POSTSPAWN, dmParticle::EMITTER_STATE_POSTSPAWN);
+        // Collider shapes
+        SETCONSTANT(COLLIDER_SPHERE, dmParticle::COLLIDER_SPHERE);
+        SETCONSTANT(COLLIDER_BOX, dmParticle::COLLIDER_BOX);
 
         #undef SETCONSTANT
 

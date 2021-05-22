@@ -127,13 +127,19 @@ message ActivateCollisionParticleFX {}
 message AddColliderParticleFX
 {
     required uint32         handle     = 1;
-    required dmMath.Vector3 position   = 2 [(field_align)=true];
-    required dmMath.Vector3 dimensions = 3 [(field_align)=true];
+    required uint32         shape      = 2;
+    required dmMath.Vector3 position   = 3 [(field_align)=true];
+    required dmMath.Vector3 dimensions = 4 [(field_align)=true];
 }
 message SetPositionColliderParticleFX
 {
     required uint32         handle      = 1;
     required dmMath.Vector3 position    = 2 [(field_align)=true];
+}
+message SetForceColliderParticleFX
+{
+    required uint32         handle      = 1;
+    required dmMath.Vector3 force       = 2 [(field_align)=true];
 }
 message SetConstantParticleFX
 {

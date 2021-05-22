@@ -581,15 +581,33 @@ namespace dmParticle
     {
         // TODO: Felhanteringsknåd
         Instance* i = GetInstance(context, instance);
-        if (handle > i->m_Colliders.Size())
+        uint32_t length = i->m_Colliders.Size();
+        for (uint32_t j = 0; j < length; ++j )
         {
-            dmLogError("Something wrong with collider handle");
-            return;
+            if (i->m_Colliders[j].m_Id == handle)
+            {
+                i->m_Colliders[handle].m_Position = position;
+                return;
+            }
         }
-        i->m_Colliders[handle].m_Position = position;
     }
 
-    void AddCollider(HParticleContext context, HInstance instance, uint32_t id, Vector3 position, Vector3 dimensions)
+    void SetColliderForce(HParticleContext context, HInstance instance, uint32_t handle, Vector3 force)
+    {
+        // TODO: Felhanteringsknåd
+        Instance* i = GetInstance(context, instance);
+        uint32_t length = i->m_Colliders.Size();
+        for (uint32_t j = 0; j < length; ++j )
+        {
+            if (i->m_Colliders[j].m_Id == handle)
+            {
+                i->m_Colliders[handle].m_Force = force;
+                return;
+            }
+        }
+    }
+
+    void AddCollider(HParticleContext context, HInstance instance, uint32_t handle, uint32_t shape, Vector3 position, Vector3 dimensions)
     {
         // TODO: Not sure I'm working with dmArrays correctly, but hey, it works!
         if (instance == INVALID_INSTANCE) {
@@ -601,9 +619,9 @@ namespace dmParticle
         uint32_t length = i->m_Colliders.Size();
         for (uint32_t j = 0; j < length; ++j )
         {
-            if (i->m_Colliders[j].m_Id == id)
+            if (i->m_Colliders[j].m_Id == handle)
             {
-                dmLogError("Particle with handle %d already exists!", id);
+                dmLogError("Particle with handle %d already exists!", handle);
                 return;
             }
         }
@@ -614,7 +632,8 @@ namespace dmParticle
         Collider coll = Collider();
                  coll.m_Position   = position;
                  coll.m_Dimensions = dimensions;
-                 coll.m_Id = id;
+                 coll.m_Id = handle;
+                 coll.m_Shape = (ColliderShape) shape;
         i->m_Colliders[length] = coll;
     }
 
@@ -1602,28 +1621,39 @@ namespace dmParticle
 
                 // Loop through obstacles
                 for (uint32_t j = 0; j < obstacle_count; j++) {
-                    // If collision, reflect velocity and move out (from your parents) //Oskar
-                    // break to make sure we dont collide more then once, yolo
 
-                    // Only care about x-scale due to perfect circles, this aint good!
-                    float dx = instance->m_Colliders[j].m_Dimensions[0] / 2.0;
-                    const float dissipation = 0.65;
+                    switch(instance->m_Colliders[j].m_Shape)
+                    {
+                        case (COLLIDER_SPHERE):
+                        {
+                            // Only care about x-scale due to perfect circles, this aint good!
+                            float dx = instance->m_Colliders[j].m_Dimensions[0] / 2.0;
+                            const float dissipation = 0.65;
 
-                    float diff_x = newPos[0] - instance->m_Colliders[j].m_Position[0];
-                    float diff_y = newPos[1] - instance->m_Colliders[j].m_Position[1];
-                    float diff_z = newPos[2] - instance->m_Colliders[j].m_Position[2];
-                    float dist = sqrt((diff_x * diff_x) + (diff_y * diff_y) + (diff_z * diff_z));
+                            float diff_x = newPos[0] - instance->m_Colliders[j].m_Position[0];
+                            float diff_y = newPos[1] - instance->m_Colliders[j].m_Position[1];
+                            float diff_z = newPos[2] - instance->m_Colliders[j].m_Position[2];
+                            float dist = sqrt((diff_x * diff_x) + (diff_y * diff_y) + (diff_z * diff_z));
 
-                    Vector3 norm = Vector3(diff_x / dist, diff_y / dist, 0);
+                            Vector3 norm = Vector3(diff_x / dist, diff_y / dist, 0);
 
-                    if (dist <= dx) {
-                        float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
-                        Vector3 out = p->m_Velocity - 2.0 * dot * norm;
-                        // Reflect velocity
-                        p->m_Velocity = out * dissipation;
-                        // Move particle out of obstacle
-                        p->SetPosition(p->GetPosition() + norm * (dx - dist));
-                        // TODO: Break out of loop, we don't want to collide with multiple colliders, AMIRIGHT??!?
+                            if (dist <= dx) {
+                                float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
+                                Vector3 out = p->m_Velocity - 2.0 * dot * norm;
+                                // Reflect velocity TODO: Implement mass
+                                p->m_Velocity = instance->m_Colliders[j].m_Force * instance->m_Colliders[j].m_Mass + out * dissipation;
+                                // Move particle out of obstacle
+                                p->SetPosition(p->GetPosition() + norm * (dx - dist));
+                            }
+                        } break;
+                        case (COLLIDER_BOX):
+                        {
+
+                        } break;
+                        default:
+                        {
+                            dmLogWarning("Unknown collider shape: %d.", instance->m_Colliders[j].m_Shape);
+                        } break;
                     }
 
                 }
