@@ -1628,7 +1628,6 @@ namespace dmParticle
                         {
                             // Only care about x-scale due to perfect circles, this aint good!
                             float dx = instance->m_Colliders[j].m_Dimensions[0] / 2.0;
-                            const float dissipation = 0.65;
 
                             float diff_x = newPos[0] - instance->m_Colliders[j].m_Position[0];
                             float diff_y = newPos[1] - instance->m_Colliders[j].m_Position[1];
@@ -1638,9 +1637,9 @@ namespace dmParticle
                             Vector3 norm = Vector3(diff_x / dist, diff_y / dist, 0);
 
                             if (dist <= dx) {
+                                const float dissipation = 0.10;
                                 float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
                                 Vector3 out = p->m_Velocity - 2.0 * dot * norm;
-                                // Reflect velocity TODO: Implement mass
                                 p->m_Velocity = instance->m_Colliders[j].m_Force * instance->m_Colliders[j].m_Mass + out * dissipation;
                                 // Move particle out of obstacle
                                 p->SetPosition(p->GetPosition() + norm * (dx - dist));
@@ -1648,11 +1647,50 @@ namespace dmParticle
                         } break;
                         case (COLLIDER_BOX):
                         {
+                            // TODO: Add z
+                            Collider *c = &instance->m_Colliders[j];
+                            float xd = c->m_Dimensions[0] / 2.0;
+                            float yd = c->m_Dimensions[1] / 2.0;
+                            float zd = c->m_Dimensions[2] / 2.0;
+                            float x1 = c->m_Position[0] - xd;
+                            float x2 = c->m_Position[0] + xd;
+                            float y1 = c->m_Position[1] - yd;
+                            float y2 = c->m_Position[1] + yd;
+                            float z1 = c->m_Position[2] - zd;
+                            float z2 = c->m_Position[2] + zd;
+
+                            if (newPos[0] >= x1 && newPos[0] <= x2 &&
+                                newPos[1] >= y1 && newPos[1] <= y2 &&
+                                newPos[2] >= z1 && newPos[2] <= z2)
+                            {
+                                const float dissipation = 0.10;
+                                float diff_x = newPos[0] - c->m_Position[0];
+                                float diff_y = newPos[1] - c->m_Position[1];
+                                //float diff_z = newPos[2] - c->m_Position[2];
+                                Vector3 norm;
+
+                                if (abs(diff_x) > abs(diff_y))
+                                {
+                                    int _x = (signbit(diff_x) ?  -1 : 1);
+                                    norm = Vector3(_x, 0, 0);
+                                    p->m_Position[0] = c->m_Position[0] + xd * _x;
+                                }
+                                else
+                                {
+                                    int _y = (signbit(diff_y) ?  -1 : 1);
+                                    norm = Vector3(0, _y, 0);
+                                    p->m_Position[1] = c->m_Position[1] + yd * _y;
+                                }
+
+                                float dot = p->m_Velocity[0] * norm[0] + p->m_Velocity[1] * norm[1] + p->m_Velocity[2] * norm[2];
+                                Vector3 out = p->m_Velocity - 2.0 * dot * norm;
+                                p->m_Velocity = instance->m_Colliders[j].m_Force * instance->m_Colliders[j].m_Mass + out * dissipation;
+                            }
 
                         } break;
                         default:
                         {
-                            dmLogWarning("Unknown collider shape: %d.", instance->m_Colliders[j].m_Shape);
+                            dmLogWarning("Unknown collider shape identifier: %d.", instance->m_Colliders[j].m_Shape);
                         } break;
                     }
 
